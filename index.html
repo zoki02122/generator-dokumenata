@@ -320,9 +320,11 @@ function rerender(){ render(); }
 
 /* ======================= GEMINI POZIV ======================= */
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+const GEMINI_MODEL_ANALYSIS = 'gemini-3.5-flash'; // jaci model, samo za jednokratno prepoznavanje polja pri pravljenju sablona
 
-async function callGemini(parts){
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+async function callGemini(parts, model){
+  const useModel = model || GEMINI_MODEL;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${useModel}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
   const res = await fetch(url, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -871,23 +873,26 @@ async function analyzeDocument(){
   try{
     const prompt = `Ovo je popunjen primerak dokumenta na srpskom jeziku (ugovor, zapisnik ili slično). Tvoj zadatak: pronađi delove teksta koji su specifični za OVU osobu/transakciju (imena, adrese, brojevi ličnih karata, iznosi, datumi, brojevi telefona, brojevi računa, itd.) — nasuprot fiksnog pravnog teksta koji se ponavlja u svakom takvom dokumentu.
 
-Dokument može sadržati i veliku listu fiksnih stavki (npr. čeklistu, inventar, spisak opreme sa kvadratićima za čekiranje) — to jeste fiksan tekst i njega ne prijavljuješ. ALI to ne znači da ceo dokument treba da tretiraš kao fiksnu formu: bez obzira na to koliko je takva lista velika, ODVOJENO od nje pronađi SVAKI konkretan datum, ime i prezime, adresu, broj telefona/emaila, broj lične karte, ili iznos novca koji se pojavljuje bilo gde u tekstu (najčešće u zaglavlju, pre liste). Ako u tekstu postoji BAREM JEDAN takav konkretan podatak, ne vraćaj praznu listu.
+PRVI KORAK (interno, ne prijavljuješ ovo posebno): pažljivo prođi kroz CEO tekst i mentalno nabroji SVAKU imenovanu osobu koja se pominje — zakupce, zakupodavce, suvlasnike, supružnike, decu, ostala lica koja koriste stan, svedoke, itd. — bez obzira da li je pomenuta u jednoj rečenici, u nabrajanju/spisku, ili u zagradi. Nemoj preskočiti nijednu osobu, čak i ako je spisak dugačak ili se osoba pominje samo jednom, uzgred.
+
+DRUGI KORAK: za SVAKU osobu koju si nabrojao u prvom korku, izvuci SVAKI njen podatak (ime i prezime, broj lične karte/pasoša, adresa, državljanstvo, telefon, email...) kao SVOJE ODVOJENO polje. Nikad ne spajaj podatke više osoba u jedno polje — ako npr. i supruga i dete imaju svoj broj pasoša, to su DVA odvojena polja, ne jedno.
+
+Dokument može sadržati i veliku listu fiksnih stavki (npr. čeklistu, inventar, spisak opreme sa kvadratićima za čekiranje) — to jeste fiksan tekst i njega ne prijavljuješ. ALI to ne znači da ceo dokument treba da tretiraš kao fiksnu formu: bez obzira na to koliko je takva lista velika, ODVOJENO od nje pronađi SVAKI konkretan datum, ime i prezime, adresu, broj telefona/emaila, broj lične karte, ili iznos novca koji se pojavljuje bilo gde u tekstu. Ako u tekstu postoji BAREM JEDAN takav konkretan podatak, ne vraćaj praznu listu.
 
 Vrati ISKLJUČIVO JSON niz (bez markdown, bez objašnjenja), gde je svaki element:
-{"label": "kratak opis na srpskom, npr 'Ime zakupca'", "value": "tačan string kako se pojavljuje u dokumentu, karakter po karakter", "confidence": "high" ili "medium" ili "low"}
+{"label": "kratak opis na srpskom, npr 'Broj pasoša deteta'", "value": "tačan string kako se pojavljuje u dokumentu, karakter po karakter", "confidence": "high" ili "medium" ili "low"}
 
 Pravila:
 - "value" mora biti tačan podniz originalnog teksta (da bi se mogao pronaći i zameniti).
 - Ne uključuj fiksni pravni tekst, nazive članova, opšte formulacije, ili nazive/stavke iz čekliste/inventara.
 - Ne izmišljaj ništa što nije u tekstu.
-- Ako dokument nabraja VIŠE OSOBA (npr. suvlasnici, članovi porodice, lica koja koriste stan), obradi SVAKU osobu posebno i SVAKI njen podatak (ime, broj dokumenta, adresa, državljanstvo...) kao SVOJE ODVOJENO polje — nikad ne spajaj podatke više osoba u jedno polje, i ne izostavi nijednu osobu iz nabrajanja, čak i ako ih je mnogo.
 - Ako je isti podatak spomenut više puta u istom obliku, navedi ga samo jednom.
 
 Tekst dokumenta:
 """
 ${wizard.rawText}
 """`;
-    const raw = await callGemini([{ text: prompt }]);
+    const raw = await callGemini([{ text: prompt }], GEMINI_MODEL_ANALYSIS);
     const parsed = extractJson(raw);
     wizard._debugRaw = raw;
     wizard._debugParsedCount = Array.isArray(parsed) ? parsed.length : -1;
