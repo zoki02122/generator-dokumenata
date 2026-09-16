@@ -320,7 +320,7 @@ function rerender(){ render(); }
 
 /* ======================= GEMINI POZIV ======================= */
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
-const GEMINI_MODEL_ANALYSIS = 'gemini-3.5-flash'; // jaci model, samo za jednokratno prepoznavanje polja pri pravljenju sablona
+const GEMINI_MODEL_ANALYSIS = GEMINI_MODEL; // sitna podela teksta je popravka, ne treba skuplji model za kratke odlomke
 
 async function callGemini(parts, model){
   const useModel = model || GEMINI_MODEL;
@@ -896,18 +896,22 @@ ${text}
 /* Za veće dokumente, podeli na dva dela (po pasusima, ne u sredini rečenice) i analiziraj
    odvojeno — manje teksta po pozivu znači da AI manje "gubi" pojedinačne osobe/podatke
    u masi ostalog teksta. Za manje dokumente (npr. zapisnik sa čeklistom) jedan poziv je dovoljan. */
-function splitForAnalysis(text, threshold=4000){
-  if(text.length <= threshold) return [text];
+function splitForAnalysis(text, targetSize=1600){
+  if(text.length <= targetSize) return [text];
   const paras = text.split(/\n{2,}/);
-  const half = text.length / 2;
-  let acc = 0, cut = paras.length;
-  for(let i=0;i<paras.length;i++){
-    acc += paras[i].length;
-    if(acc >= half){ cut = i+1; break; }
+  const chunks = [];
+  let cur = [];
+  let curLen = 0;
+  for(const p of paras){
+    if(curLen > 0 && curLen + p.length > targetSize){
+      chunks.push(cur.join('\n\n'));
+      cur = []; curLen = 0;
+    }
+    cur.push(p);
+    curLen += p.length;
   }
-  const part1 = paras.slice(0, cut).join('\n\n');
-  const part2 = paras.slice(cut).join('\n\n');
-  return [part1, part2].filter(p=>p.trim());
+  if(cur.length) chunks.push(cur.join('\n\n'));
+  return chunks.filter(c=>c.trim());
 }
 
 async function analyzeDocument(){
