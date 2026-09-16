@@ -869,9 +869,8 @@ function extractLabelValuePairs(rawText){
   return out;
 }
 
-async function analyzeDocument(){
-  try{
-    const prompt = `Ovo je popunjen primerak dokumenta na srpskom jeziku (ugovor, zapisnik ili slično). Tvoj zadatak: pronađi delove teksta koji su specifični za OVU osobu/transakciju (imena, adrese, brojevi ličnih karata, iznosi, datumi, brojevi telefona, brojevi računa, itd.) — nasuprot fiksnog pravnog teksta koji se ponavlja u svakom takvom dokumentu.
+function buildAnalysisPrompt(text){
+  return `Ovo je popunjen primerak dokumenta na srpskom jeziku (ugovor, zapisnik ili slično) — ili DEO takvog dokumenta. Tvoj zadatak: pronađi delove teksta koji su specifični za OVU osobu/transakciju (imena, adrese, brojevi ličnih karata, iznosi, datumi, brojevi telefona, brojevi računa, itd.) — nasuprot fiksnog pravnog teksta koji se ponavlja u svakom takvom dokumentu.
 
 PRVI KORAK (interno, ne prijavljuješ ovo posebno): pažljivo prođi kroz CEO tekst i mentalno nabroji SVAKU imenovanu osobu koja se pominje — zakupce, zakupodavce, suvlasnike, supružnike, decu, ostala lica koja koriste stan, svedoke, itd. — bez obzira da li je pomenuta u jednoj rečenici, u nabrajanju/spisku, ili u zagradi. Nemoj preskočiti nijednu osobu, čak i ako je spisak dugačak ili se osoba pominje samo jednom, uzgred.
 
@@ -890,14 +889,42 @@ Pravila:
 
 Tekst dokumenta:
 """
-${wizard.rawText}
+${text}
 """`;
-    const raw = await callGemini([{ text: prompt }], GEMINI_MODEL_ANALYSIS);
-    const parsed = extractJson(raw);
-    wizard._debugRaw = raw;
-    wizard._debugParsedCount = Array.isArray(parsed) ? parsed.length : -1;
+}
 
-    const aiCandidates = parsed.map(c=>{
+/* Za veće dokumente, podeli na dva dela (po pasusima, ne u sredini rečenice) i analiziraj
+   odvojeno — manje teksta po pozivu znači da AI manje "gubi" pojedinačne osobe/podatke
+   u masi ostalog teksta. Za manje dokumente (npr. zapisnik sa čeklistom) jedan poziv je dovoljan. */
+function splitForAnalysis(text, threshold=4000){
+  if(text.length <= threshold) return [text];
+  const paras = text.split(/\n{2,}/);
+  const half = text.length / 2;
+  let acc = 0, cut = paras.length;
+  for(let i=0;i<paras.length;i++){
+    acc += paras[i].length;
+    if(acc >= half){ cut = i+1; break; }
+  }
+  const part1 = paras.slice(0, cut).join('\n\n');
+  const part2 = paras.slice(cut).join('\n\n');
+  return [part1, part2].filter(p=>p.trim());
+}
+
+async function analyzeDocument(){
+  try{
+    const parts = splitForAnalysis(wizard.rawText);
+    let allParsed = [];
+    let debugRawCombined = [];
+    for(const part of parts){
+      const raw = await callGemini([{ text: buildAnalysisPrompt(part) }], GEMINI_MODEL_ANALYSIS);
+      debugRawCombined.push(raw);
+      const parsed = extractJson(raw);
+      if(Array.isArray(parsed)) allParsed = allParsed.concat(parsed);
+    }
+    wizard._debugRaw = debugRawCombined.join('\n\n---\n\n');
+    wizard._debugParsedCount = allParsed.length;
+
+    const aiCandidates = allParsed.map(c=>{
       const rawVal = String(c.value||'').trim();
       const real = findRealSubstring(wizard.rawText, rawVal);
       return {
