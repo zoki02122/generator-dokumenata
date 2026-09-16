@@ -949,15 +949,6 @@ async function analyzeDocument(){
       wizard.candidates.push({ label:c.label, value:c.value, confidence:c.confidence, confirmed:true });
     });
 
-    // Ukloni "krovna"/spojena polja čija je vrednost samo omotač oko neke DRUGE, preciznije
-    // potvrđene vrednosti (npr. cela rečenica sa datumom, kad "datum" već postoji kao svoje polje;
-    // ili spojen pasus o supruzi/detetu, kad su ime/pasoš/poreklo već izvučeni kao odvojena polja).
-    const allValues = wizard.candidates.map(c=>c.value);
-    wizard.candidates = wizard.candidates.filter(c=>{
-      const isRedundantContainer = allValues.some(v => v!==c.value && v.length<c.value.length && c.value.includes(v));
-      return !isRedundantContainer;
-    });
-
     wizard._analyzed = true;
     wizard._analyzing = false;
   }catch(err){
