@@ -310,7 +310,19 @@ function go(next){
   }
   screen = next; render(); window.scrollTo(0,0);
 }
+function openModal(m){
+  if(!history.state || !history.state.inApp){
+    history.pushState({inApp:true}, '');
+  }
+  modal = m;
+  render();
+}
+function closeModal(){
+  modal = null;
+  render();
+}
 window.addEventListener('popstate', ()=>{
+  if(modal){ closeModal(); return; }
   screen = { name:'home' };
   wizard = null;
   render();
@@ -440,15 +452,22 @@ const APP_VERSION = 'v10';
 
 function frozenHeader(tpl){
   const wrap = el('div',{class:'frozen-top'});
-  wrap.appendChild(el('div',{class:'frozen-row1'},[
+  const row1Children = [
     el('h1',{}, [txt(tpl ? tpl.name : 'Generator dokumenata')]),
-    el('button',{class:'icon-btn', onclick:()=>{ modal = { type:'uploadMenu' }; render(); }},[txt('+')]),
-    el('button',{class:'icon-btn', onclick:()=>go({name:'settings'})},[txt('⚙')])
-  ]));
+  ];
+  if(tpl){
+    row1Children.push(el('button',{class:'icon-btn', onclick:()=>{
+      state.currentTemplateId = null; useSession = null; saveState();
+      go({name:'home'});
+    }},[txt('✕')]));
+  }
+  row1Children.push(el('button',{class:'icon-btn', onclick:()=>{ openModal({ type:'uploadMenu' }); }},[txt('+')]));
+  row1Children.push(el('button',{class:'icon-btn', onclick:()=>go({name:'settings'})},[txt('⚙')]));
+  wrap.appendChild(el('div',{class:'frozen-row1'}, row1Children));
   if(state.templates.length > 0){
     const chipRow = el('div',{class:'chip-row'});
     chipRow.appendChild(el('button',{class:'chip chip-active', onclick:()=>{
-      modal = { type:'switchTemplate' }; render();
+      openModal({ type:'switchTemplate' });
     }},[txt((tpl?tpl.name:'Šablon') + '  ▾')]));
     chipRow.appendChild(el('button',{class:'chip chip-add', onclick:()=>{
       wizard = { step:1, name:'', rawText:'', fields:[] }; go({name:'novi'});
@@ -501,7 +520,17 @@ function screenHome(){
   }
 
   let tpl = state.templates.find(t=>t.id===state.currentTemplateId);
-  if(!tpl){ tpl = state.templates[0]; state.currentTemplateId = tpl.id; saveState(); }
+  if(!tpl){
+    wrap.appendChild(frozenHeader(null));
+    const main = el('main',{});
+    main.appendChild(el('div',{class:'empty'},[
+      el('div',{class:'icon'},[txt('📄')]),
+      el('p',{},[txt('Nijedan šablon nije otvoren.')])
+    ]));
+    main.appendChild(el('button',{class:'primary', onclick:()=>{ openModal({type:'switchTemplate'}); }},[txt('Izaberi šablon')]));
+    wrap.appendChild(main);
+    return wrap;
+  }
 
   if(!useSession || useSession.tplId !== tpl.id){
     useSession = { tplId: tpl.id, values:{}, missing:[], aiText:'', aiImage:null, aiLoading:false, aiError:null, aiDone:false };
@@ -602,8 +631,7 @@ function screenSettings(){
           ]),
           el('button',{class:'danger-text', onclick:(e)=>{
             e.stopPropagation();
-            modal = { type:'confirmDelete', tplId: t.id };
-            render();
+            openModal({ type:'confirmDelete', tplId: t.id });
           }},[txt('Obriši')])
         ]));
       });
@@ -1046,7 +1074,7 @@ function screenFillContent(tpl){
     useSession.genError = null;
     const emptyFields = tpl.fields.filter(f => !(useSession.values[f.key]||'').trim());
     if(emptyFields.length > 0){
-      modal = { type:'confirmGenerate', tplId: tpl.id, missingLabels: emptyFields.map(f=>f.label) };
+      openModal({ type:'confirmGenerate', tplId: tpl.id, missingLabels: emptyFields.map(f=>f.label) });
       render();
       return;
     }
@@ -1294,9 +1322,12 @@ function downloadBlob(blob, filename){
 
 function renderModal(){
   if(modal.type === 'switchTemplate'){
-    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ closeModal(); } }},[
       el('div',{class:'modal'},[
-        el('h3',{},[txt('Izaberi šablon')]),
+        el('div',{style:'display:flex; align-items:center; justify-content:space-between; margin-bottom:4px'},[
+          el('h3',{style:'margin:0'},[txt('Izaberi šablon')]),
+          el('button',{class:'link', style:'font-size:22px; padding:0 4px', onclick:()=>{ closeModal(); }},[txt('✕')])
+        ]),
         ...state.templates.map(t=>{
           const active = t.id === state.currentTemplateId;
           return el('button',{class:'secondary', style:'margin-bottom:8px; text-align:left;'+(active?' border-color:var(--amber-lo)':''), onclick:()=>{
@@ -1309,22 +1340,22 @@ function renderModal(){
     ]);
   }
   if(modal.type === 'uploadMenu'){
-    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ closeModal(); } }},[
       el('div',{class:'modal'},[
         el('h3',{},[txt('Dodaj dokument')]),
-        el('button',{class:'secondary', style:'margin-bottom:10px', onclick:()=>{ modal=null; render(); globalCameraInput.click(); }},[txt('📷  Slikaj')]),
-        el('button',{class:'secondary', style:'margin-bottom:10px', onclick:()=>{ modal=null; render(); globalGalleryInput.click(); }},[txt('🖼️  Galerija')]),
-        el('button',{class:'secondary', onclick:()=>{ modal=null; render(); globalFilesInput.click(); }},[txt('📁  Fajlovi')])
+        el('button',{class:'secondary', style:'margin-bottom:10px', onclick:()=>{ closeModal(); globalCameraInput.click(); }},[txt('📷  Slikaj')]),
+        el('button',{class:'secondary', style:'margin-bottom:10px', onclick:()=>{ closeModal(); globalGalleryInput.click(); }},[txt('🖼️  Galerija')]),
+        el('button',{class:'secondary', onclick:()=>{ closeModal(); globalFilesInput.click(); }},[txt('📁  Fajlovi')])
       ])
     ]);
   }
   if(modal.type === 'confirmGenerate'){
-    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ closeModal(); } }},[
       el('div',{class:'modal'},[
         el('h3',{},[txt('Neka polja nisu popunjena')]),
         el('p',{},[txt('Nedostaje: ' + modal.missingLabels.join(', ') + '. Možeš ih ostaviti prazna i generisati dokument ipak, ili se vratiti i popuniti ih.')]),
         el('div',{class:'row'},[
-          el('button',{class:'secondary', onclick:()=>{ modal=null; render(); }},[txt('Nazad, popuni')]),
+          el('button',{class:'secondary', onclick:()=>{ closeModal(); }},[txt('Nazad, popuni')]),
           el('button',{class:'primary', onclick:()=>{
             const tpl = state.templates.find(t=>t.id===modal.tplId);
             modal=null;
@@ -1335,12 +1366,12 @@ function renderModal(){
     ]);
   }
   if(modal.type === 'confirmDelete'){
-    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ closeModal(); } }},[
       el('div',{class:'modal'},[
         el('h3',{},[txt('Obriši šablon?')]),
         el('p',{},[txt('Ovo se ne može vratiti. Dokumenti koji su već generisani ostaju kako su generisani.')]),
         el('div',{class:'row'},[
-          el('button',{class:'secondary', onclick:()=>{ modal=null; render(); }},[txt('Otkaži')]),
+          el('button',{class:'secondary', onclick:()=>{ closeModal(); }},[txt('Otkaži')]),
           el('button',{class:'primary', style:'background:linear-gradient(135deg,#d97a6d,#a6392c); color:#2a1210', onclick:()=>{
             state.templates = state.templates.filter(t=>t.id!==modal.tplId);
             if(state.currentTemplateId === modal.tplId){
