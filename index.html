@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, interactive-widget=resizes-content">
+<title>Generator dokumenata</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141312">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Generator">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#141312;
+    --bg-elev:#1c1a18;
+    --bg-elev-2:#242220;
+    --line:#332f2b;
+    --text:#ede8e1;
+    --text-dim:#9c948a;
+    --amber:#c99a4a;
+    --amber-hi:#e0b565;
+    --amber-lo:#a67f38;
+    --danger:#c0564a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif; min-height:100vh;}
+  h1,h2,h3,.num{font-family:'Barlow Condensed',sans-serif; font-weight:600; letter-spacing:0.2px;}
+  #app{max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+
+  header.topbar{
+    display:flex; align-items:center; gap:12px; padding:18px 20px 14px;
+    border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:5;
+  }
+  header.topbar button.back{
+    background:none; border:none; color:var(--text-dim); font-size:44px; padding:4px 8px 4px 0; cursor:pointer; line-height:1;
+  }
+  header.topbar h1{font-size:22px; margin:0; color:var(--text); flex:1;}
+
+  .frozen-top{
+    position:sticky; top:0; background:var(--bg); z-index:5;
+    border-bottom:1px solid var(--line); padding:16px 20px 12px;
+  }
+  .frozen-row1{display:flex; align-items:center; gap:12px;}
+  .frozen-row1 h1{flex:1; font-size:21px; margin:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .icon-btn{
+    flex-shrink:0; background:var(--bg-elev-2); border:1px solid var(--line); border-radius:10px;
+    width:40px; height:40px; font-size:18px; color:var(--text); cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .chip-row{display:flex; gap:8px; overflow-x:auto; margin-top:12px; padding-bottom:2px; scrollbar-width:none;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0; background:var(--bg-elev-2); border:1px solid var(--line); border-radius:20px;
+    padding:9px 16px; color:var(--text-dim); font-family:'Barlow Condensed',sans-serif; font-size:15px;
+    font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .chip.chip-active{background:linear-gradient(135deg, var(--amber-hi), var(--amber-lo)); color:#241a08; border-color:transparent;}
+  .chip.chip-add{color:var(--amber-hi); border-color:var(--amber-lo); background:none;}
+
+  .generator-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:6;
+    display:flex; justify-content:center;
+    background:linear-gradient(180deg, rgba(20,19,18,0) 0%, var(--bg) 30%);
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  }
+  .generator-bar-inner-col{
+    width:100%; max-width:520px;
+  }
+  .generator-bar-inner{
+    display:flex; align-items:center; gap:10px;
+  }
+  input.generator-input{
+    flex:1; display:block; margin-bottom:0;
+    background:var(--bg-elev-2); border:1px solid var(--line); border-radius:26px;
+    padding:13px 18px; color:var(--text); font-size:16px;
+  }
+  .generator-send{
+    flex-shrink:0; width:52px; height:52px; border-radius:50%; border:none; cursor:pointer;
+    background:linear-gradient(135deg, var(--amber-hi) 0%, var(--amber-lo) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 3px 10px rgba(0,0,0,0.4);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; color:#241a08;
+  }
+  .attach-chip{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--bg-elev-2); border:1px solid var(--amber-lo); border-radius:14px;
+    padding:8px 12px; margin-bottom:8px; font-size:13.5px; color:var(--text);
+  }
+  .attach-chip button{
+    background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:2px 4px;
+  }
+
+  main{flex:1; padding:18px 20px 40px;}
+
+  .card{
+    background:var(--bg-elev); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin-bottom:12px;
+  }
+  .empty{
+    text-align:center; padding:50px 20px; color:var(--text-dim);
+  }
+  .empty .icon{font-size:38px; margin-bottom:10px; opacity:0.7;}
+  .empty p{margin:6px 0; font-size:15px; line-height:1.5;}
+
+  .tpl-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--bg-elev); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; margin-bottom:10px; cursor:pointer;
+  }
+  .tpl-row .meta{flex:1; min-width:0;}
+  .tpl-row .name{font-family:'Barlow Condensed',sans-serif; font-size:19px; font-weight:600;}
+  .tpl-row .sub{font-size:13px; color:var(--text-dim); margin-top:2px;}
+  .tpl-row .chev{color:var(--text-dim); font-size:20px;}
+
+  button.primary{
+    width:100%; border:none; border-radius:12px; padding:15px 18px;
+    font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:600;
+    color:#241a08; cursor:pointer;
+    background:linear-gradient(135deg, var(--amber-hi) 0%, var(--amber-lo) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 8px rgba(0,0,0,0.35);
+  }
+  button.primary:active{transform:translateY(1px);}
+  button.primary:disabled{opacity:0.45; cursor:default;}
+
+  button.secondary{
+    width:100%; border:1px solid var(--line); border-radius:12px; padding:14px 18px;
+    font-family:'Barlow',sans-serif; font-size:15px; font-weight:500;
+    color:var(--text); cursor:pointer; background:var(--bg-elev-2);
+  }
+  button.link{
+    background:none; border:none; color:var(--amber-hi); font-size:14px; padding:8px; cursor:pointer;
+  }
+  button.danger-text{
+    background:none; border:none; color:var(--danger); font-size:14px; padding:8px; cursor:pointer;
+  }
+
+  .fab{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    max-width:480px; width:calc(100% - 40px);
+  }
+
+  label{display:block; font-size:13px; color:var(--text-dim); margin:0 0 6px;}
+  input[type=text], textarea{
+    width:100%; background:var(--bg-elev-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px 13px; color:var(--text); font-family:'Barlow',sans-serif; font-size:16px;
+    margin-bottom:16px;
+  }
+  textarea{min-height:120px; resize:vertical;}
+  input::placeholder, textarea::placeholder{color:#6b6459;}
+
+  .field-row{
+    display:flex; align-items:flex-start; gap:12px;
+    background:var(--bg-elev-2); border:1px solid var(--line); border-radius:12px;
+    padding:13px 14px; margin-bottom:9px;
+  }
+  .field-row-missing{
+    border:1.5px solid var(--danger); background:rgba(192,86,74,0.08);
+  }
+  .field-row .body{flex:1; min-width:0;}
+  .field-row .label{font-size:14px; color:var(--text-dim); margin-bottom:3px;}
+  .field-row .value{font-size:15.5px; word-break:break-word;}
+  .field-row .conf{font-size:11px; color:var(--text-dim); margin-top:4px;}
+  .toggle{
+    display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; flex-shrink:0;
+  }
+  .toggle button{
+    border:none; background:var(--bg-elev-2); color:var(--text-dim); font-size:13px;
+    padding:7px 12px; cursor:pointer; font-family:'Barlow',sans-serif; font-weight:500;
+  }
+  .toggle button.on-yes.active{background:var(--amber); color:#241a08;}
+  .toggle button.on-no.active{background:var(--danger); color:#2a1210;}
+
+  .upload-box{
+    border:1.5px dashed var(--line); border-radius:14px; padding:26px 16px; text-align:center;
+    color:var(--text-dim); margin-bottom:16px; cursor:pointer;
+  }
+  .upload-box.filled{border-color:var(--amber-lo); color:var(--text);}
+  .upload-box .icon{font-size:26px; margin-bottom:8px; display:block;}
+  input[type=file]{display:none;}
+
+  .step-dots{display:flex; gap:6px; justify-content:center; margin-bottom:18px;}
+  .step-dots span{width:7px; height:7px; border-radius:50%; background:var(--line);}
+  .step-dots span.active{background:var(--amber);}
+
+  .spinner{
+    width:22px; height:22px; border:3px solid var(--line); border-top-color:var(--amber);
+    border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-row{display:flex; align-items:center; gap:12px; justify-content:center; padding:30px 0; color:var(--text-dim); font-size:14px;}
+
+  .note{
+    background:rgba(201,154,74,0.09); border:1px solid rgba(201,154,74,0.28); border-radius:10px;
+    padding:11px 13px; font-size:13.5px; color:var(--amber-hi); line-height:1.5; margin-bottom:16px;
+  }
+  .err{
+    background:rgba(192,86,74,0.12); border:1px solid rgba(192,86,74,0.35); border-radius:10px;
+    padding:11px 13px; font-size:13.5px; color:#e39c92; line-height:1.5; margin-bottom:16px;
+  }
+  pre.doc-preview{
+    white-space:pre-wrap; word-break:break-word; font-family:'Barlow',sans-serif; font-size:14px;
+    background:var(--bg-elev-2); border:1px solid var(--line); border-radius:12px; padding:14px;
+    max-height:50vh; overflow-y:auto; line-height:1.55;
+  }
+
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
+    padding:24px; z-index:50;
+  }
+  .modal{
+    background:var(--bg-elev); border:1px solid var(--line); border-radius:16px; padding:22px;
+    max-width:400px; width:100%;
+  }
+  .modal h3{margin:0 0 10px; font-size:19px;}
+  .modal p{font-size:14px; color:var(--text-dim); line-height:1.5; margin:0 0 18px;}
+  .modal .row{display:flex; gap:10px;}
+
+  .acc-group{
+    border:1px solid var(--line); border-radius:14px; margin-bottom:12px;
+    background:var(--bg-elev); overflow:hidden;
+  }
+  .acc-header{
+    display:flex; align-items:center; gap:12px; padding:16px; cursor:pointer;
+  }
+  .acc-header .icon{font-size:24px; flex-shrink:0;}
+  .acc-header .title{flex:1; font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:600;}
+  .acc-header .sub{font-size:12.5px; color:var(--text-dim);}
+  .acc-chevron{color:var(--text-dim); font-size:32px; line-height:1; transition:transform 0.2s ease; flex-shrink:0;}
+  .acc-chevron.open{transform:rotate(180deg);}
+  .acc-body{padding:0 16px 16px; border-top:1px solid var(--line);}
+  .acc-body-inner{padding-top:14px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.2/mammoth.browser.min.js"></script>
+<script src="https://unpkg.com/pizzip@3.2.0/dist/pizzip.js"></script>
+<script src="https://unpkg.com/docxtemplater@3.70.0/build/docxtemplater.js"></script>
+<script>
+/* ======================= STANJE / STORAGE ======================= */
+const STORAGE_KEY = 'generatorDokumenataV1';
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { apiKey:'', templates:[], currentTemplateId:null };
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+if(state.currentTemplateId === undefined) state.currentTemplateId = null;
+
+/* nav: jednostavan stek ekrana */
+let screen = { name: state.apiKey ? 'home' : 'setup' };
+let wizard = null; // privremeno stanje za "novi šablon" tok
+let useSession = null; // privremeno stanje za "koristi šablon" tok
+let modal = null;
+let settingsOpen = null; // koja celina je otvorena u podešavanjima: 'api' | 'templates' | null
+
+/* ---------- GLOBALNI FAJL INPUTI (van render stabla, uvek dostupni) ---------- */
+function makeHiddenFileInput(accept, capture){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = accept;
+  if(capture) input.capture = capture;
+  input.style.display = 'none';
+  input.addEventListener('change', (e)=>{
+    const f = e.target.files[0];
+    e.target.value = ''; // da se isti fajl može ponovo izabrati
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const base64 = reader.result.split(',')[1];
+      if(!useSession){
+        useSession = { tplId: state.currentTemplateId, values:{}, missing:[], aiText:'', aiImage:null, aiLoading:false, aiError:null, aiDone:false };
+      }
+      useSession.aiImage = { mimeType: f.type || 'application/octet-stream', data: base64, name: f.name };
+      rerender();
+    };
+    reader.readAsDataURL(f);
+  });
+  document.body.appendChild(input);
+  return input;
+}
+const globalCameraInput = makeHiddenFileInput('image/*', 'environment');
+const globalGalleryInput = makeHiddenFileInput('image/*', null);
+const globalFilesInput = makeHiddenFileInput('application/pdf', null);
+
+function go(next){
+  if(next.name === 'home'){
+    if(history.state && history.state.inApp){
+      history.back(); // popstate handler ispod vraća na home i renderuje
+      return;
+    }
+    screen = next; render(); window.scrollTo(0,0);
+    return;
+  }
+  if(!history.state || !history.state.inApp){
+    history.pushState({inApp:true}, '');
+  }
+  screen = next; render(); window.scrollTo(0,0);
+}
+window.addEventListener('popstate', ()=>{
+  screen = { name:'home' };
+  wizard = null;
+  render();
+  window.scrollTo(0,0);
+});
+function rerender(){ render(); }
+
+/* ======================= GEMINI POZIV ======================= */
+const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+
+async function callGemini(parts){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ contents:[{ role:'user', parts }] })
+  });
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw new Error('Gemini greška ('+res.status+'): '+t.slice(0,200));
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('') || '';
+  if(!text) throw new Error('Gemini nije vratio tekst odgovora.');
+  return text;
+}
+
+function normalizeForMatch(s){
+  return s
+    .replace(/[\u2010-\u2015\u2212]/g,'-')
+    .replace(/[\u2018\u2019]/g,"'")
+    .replace(/[\u201C\u201D]/g,'"')
+    .replace(/\s+/g,' ')
+    .trim()
+    .toLowerCase();
+}
+
+/* AI ume da vrati vrednost blago drugačije formatiranu (druga crta, razmak) nego
+   što se TAČNO pojavljuje u tekstu. Umesto da takav predlog odbacimo, potražimo
+   stvaran podniz u tekstu koji se (nakon normalizacije) poklapa, i koristimo NJEGA
+   (pravi tekst iz dokumenta) — tako i dalje ostaje 100% tačna zamena, samo tolerantnija
+   prema AI odgovoru. */
+function findRealSubstring(rawText, value){
+  if(!value) return null;
+  if(rawText.includes(value)) return value;
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  if(words.length===0) return null;
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/[-\u2010-\u2015]/g,'[-\\u2010-\\u2015]'));
+  try{
+    const re = new RegExp(escaped.join('[\\s]+'), 'i');
+    const m = rawText.match(re);
+    if(m) return m[0];
+  }catch(e){}
+  return null;
+}
+
+function extractJson(text){
+  let t = text.trim();
+  t = t.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'');
+  const start = t.indexOf('['); const end = t.lastIndexOf(']');
+  if(start>=0 && end>start) t = t.slice(start, end+1);
+  return JSON.parse(t);
+}
+
+function extractJsonObject(text){
+  let t = text.trim();
+  t = t.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'');
+  const start = t.indexOf('{'); const end = t.lastIndexOf('}');
+  if(start>=0 && end>start) t = t.slice(start, end+1);
+  return JSON.parse(t);
+}
+
+function slugify(label, existingKeys){
+  const map = {'č':'c','ć':'c','ž':'z','š':'s','đ':'dj','Č':'c','Ć':'c','Ž':'z','Š':'s','Đ':'dj'};
+  let s = label.split('').map(ch=>map[ch]||ch).join('');
+  s = s.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  if(!s) s = 'polje';
+  let base = s, i = 2;
+  while(existingKeys.includes(s)){ s = base+'_'+i; i++; }
+  return s;
+}
+
+/* ======================= EKSTRAKCIJA TEKSTA IZ FAJLA ======================= */
+async function extractTextFromFile(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.docx')){
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return { text: result.value, docxArrayBuffer: buf };
+  }else{
+    const t = await file.text();
+    return { text: t, docxArrayBuffer: null };
+  }
+}
+
+/* ======================= RENDER ======================= */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(renderScreen());
+  if(modal) app.appendChild(renderModal());
+}
+
+function el(tag, attrs, children){
+  const e = document.createElement(tag);
+  if(attrs) for(const k in attrs){
+    if(k==='class') e.className = attrs[k];
+    else if(k==='html') e.innerHTML = attrs[k];
+    else if(k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  if(children) children.forEach(c=>{ if(c) e.appendChild(c); });
+  return e;
+}
+function txt(t){ return document.createTextNode(t); }
+
+function topbar(title, onBack){
+  return el('header',{class:'topbar'},[
+    onBack ? el('button',{class:'back', onclick:onBack}, [txt('‹')]) : el('div',{style:'width:26px'}),
+    el('h1',{}, [txt(title)])
+  ]);
+}
+
+const APP_VERSION = 'v10';
+
+function frozenHeader(tpl){
+  const wrap = el('div',{class:'frozen-top'});
+  wrap.appendChild(el('div',{class:'frozen-row1'},[
+    el('h1',{}, [txt(tpl ? tpl.name : 'Generator dokumenata'), el('span',{style:'font-size:13px; color:var(--text-dim); font-weight:400; margin-left:8px'},[txt(APP_VERSION)])]),
+    el('button',{class:'icon-btn', onclick:()=>{ modal = { type:'uploadMenu' }; render(); }},[txt('+')]),
+    el('button',{class:'icon-btn', onclick:()=>go({name:'settings'})},[txt('⚙')])
+  ]));
+  if(state.templates.length > 0){
+    const chipRow = el('div',{class:'chip-row'});
+    chipRow.appendChild(el('button',{class:'chip chip-active', onclick:()=>{
+      modal = { type:'switchTemplate' }; render();
+    }},[txt((tpl?tpl.name:'Šablon') + '  ▾')]));
+    chipRow.appendChild(el('button',{class:'chip chip-add', onclick:()=>{
+      wizard = { step:1, name:'', rawText:'', fields:[] }; go({name:'novi'});
+    }},[txt('+ Šablon')]));
+    wrap.appendChild(chipRow);
+  }
+  return wrap;
+}
+
+/* ---------- SETUP: unos API ključa ---------- */
+function screenSetup(){
+  const wrap = el('div',{});
+  wrap.appendChild(topbar('Generator dokumenata', null));
+  const main = el('main',{});
+  main.appendChild(el('div',{class:'card'},[
+    el('h3',{style:'margin-top:0'},[txt('Gemini API ključ')]),
+    el('p',{style:'color:var(--text-dim); font-size:14px; line-height:1.5; margin-top:0'},[
+      txt('Unesi svoj Gemini API ključ (isti koji koristiš za Kućnu apoteku / Troškove, ili nov). Čuva se samo lokalno na ovom telefonu.')
+    ])
+  ]));
+  const input = el('input',{type:'text', placeholder:'AIza...'});
+  main.appendChild(input);
+  main.appendChild(el('button',{class:'primary', onclick:()=>{
+    const v = input.value.trim();
+    if(!v) return;
+    state.apiKey = v; saveState();
+    go({name:'home'});
+  }}, [txt('Sačuvaj i nastavi')]));
+  wrap.appendChild(main);
+  return wrap;
+}
+
+/* ---------- HOME: glavni ekran — zamrznut header + popuna trenutnog šablona ---------- */
+function screenHome(){
+  const wrap = el('div',{});
+
+  if(state.templates.length === 0){
+    wrap.appendChild(frozenHeader(null));
+    const main = el('main',{});
+    main.appendChild(el('div',{class:'empty'},[
+      el('div',{class:'icon'},[txt('📄')]),
+      el('p',{},[txt('Nemaš još sačuvan šablon.')]),
+      el('p',{},[txt('Napravi prvi šablon od postojećeg, već popunjenog dokumenta.')])
+    ]));
+    main.appendChild(el('button',{class:'primary', onclick:()=>{
+      wizard = { step:1, name:'', rawText:'', fields:[] }; go({name:'novi'});
+    }},[txt('+ Novi šablon')]));
+    wrap.appendChild(main);
+    return wrap;
+  }
+
+  let tpl = state.templates.find(t=>t.id===state.currentTemplateId);
+  if(!tpl){ tpl = state.templates[0]; state.currentTemplateId = tpl.id; saveState(); }
+
+  if(!useSession || useSession.tplId !== tpl.id){
+    useSession = { tplId: tpl.id, values:{}, missing:[], aiText:'', aiImage:null, aiLoading:false, aiError:null, aiDone:false };
+  }
+
+  wrap.appendChild(frozenHeader(tpl));
+  const content = screenFillContent(tpl);
+  content.style.paddingBottom = '150px';
+  wrap.appendChild(content);
+
+  const barWrap = el('div',{class:'generator-bar'});
+  const barInner = el('div',{class:'generator-bar-inner-col'});
+
+  if(useSession.aiImage){
+    barInner.appendChild(el('div',{class:'attach-chip'},[
+      el('span',{},[txt('📎 '+useSession.aiImage.name)]),
+      el('button',{onclick:()=>{ useSession.aiImage=null; rerender(); }},[txt('✕')])
+    ]));
+  }
+  if(useSession.aiError){
+    barInner.appendChild(el('div',{class:'err', style:'margin-bottom:8px'},[txt(useSession.aiError)]));
+  }
+
+  const row = el('div',{class:'generator-bar-inner'});
+  const textInput = el('input',{type:'text', class:'generator-input', placeholder:'Upiši ili izdiktiraj podatak...'});
+  textInput.value = useSession.aiText;
+  textInput.addEventListener('input', ()=>{ useSession.aiText = textInput.value; });
+  row.appendChild(textInput);
+
+  if(useSession.aiLoading){
+    row.appendChild(el('div',{class:'generator-send', style:'cursor:default'},[el('div',{class:'spinner', style:'width:20px; height:20px; border-width:2px; margin:0'})]));
+  }else{
+    row.appendChild(el('button',{class:'generator-send', onclick:()=>{
+      if(!useSession.aiImage && !(useSession.aiText||'').trim()){
+        useSession.aiError = 'Dodaj sliku (+) ili upiši/izdiktiraj podatak.';
+        rerender();
+        return;
+      }
+      useSession.aiError = null;
+      runAiFill(tpl);
+    }},[txt('➤')]));
+  }
+  barInner.appendChild(row);
+  barWrap.appendChild(barInner);
+  wrap.appendChild(barWrap);
+  return wrap;
+}
+
+/* ---------- PODEŠAVANJA: API ključ + upravljanje šablonima ---------- */
+function screenSettings(){
+  const wrap = el('div',{});
+  wrap.appendChild(topbar('Podešavanja  '+APP_VERSION, ()=>go({name:'home'})));
+  const main = el('main',{});
+
+  /* ---- Celina: Gemini API ključ ---- */
+  const apiOpen = settingsOpen === 'api';
+  const apiGroup = el('div',{class:'acc-group'});
+  apiGroup.appendChild(el('div',{class:'acc-header', onclick:()=>{ settingsOpen = apiOpen ? null : 'api'; rerender(); }},[
+    el('span',{class:'icon'},[txt('🔑')]),
+    el('div',{class:'title'},[txt('Gemini API ključ')]),
+    el('span',{class:'acc-chevron'+(apiOpen?' open':'')},[txt('▾')])
+  ]));
+  if(apiOpen){
+    const body = el('div',{class:'acc-body'});
+    const inner = el('div',{class:'acc-body-inner'});
+    const input = el('input',{type:'text', placeholder:'AIza...', value:state.apiKey});
+    inner.appendChild(input);
+    inner.appendChild(el('button',{class:'secondary', onclick:()=>{
+      state.apiKey = input.value.trim(); saveState();
+    }},[txt('Sačuvaj ključ')]));
+    body.appendChild(inner);
+    apiGroup.appendChild(body);
+  }
+  main.appendChild(apiGroup);
+
+  /* ---- Celina: Šabloni dokumenata ---- */
+  const tplOpen = settingsOpen === 'templates';
+  const tplGroup = el('div',{class:'acc-group'});
+  tplGroup.appendChild(el('div',{class:'acc-header', onclick:()=>{ settingsOpen = tplOpen ? null : 'templates'; rerender(); }},[
+    el('span',{class:'icon'},[txt('📄')]),
+    el('div',{class:'title'},[txt('Šabloni dokumenata')]),
+    el('span',{class:'acc-chevron'+(tplOpen?' open':'')},[txt('▾')])
+  ]));
+  if(tplOpen){
+    const body = el('div',{class:'acc-body'});
+    const inner = el('div',{class:'acc-body-inner'});
+    if(state.templates.length === 0){
+      inner.appendChild(el('p',{style:'color:var(--text-dim); font-size:14px; margin-top:0'},[txt('Nemaš još sačuvan šablon.')]));
+    }else{
+      state.templates.forEach(t=>{
+        inner.appendChild(el('div',{class:'tpl-row', onclick:()=>{
+          state.currentTemplateId = t.id; useSession = null; saveState();
+          go({name:'home'});
+        }},[
+          el('div',{class:'meta'},[
+            el('div',{class:'name'},[txt(t.name)]),
+            el('div',{class:'sub'},[txt(t.fields.length+' promenljivih polja')])
+          ]),
+          el('button',{class:'danger-text', onclick:(e)=>{
+            e.stopPropagation();
+            modal = { type:'confirmDelete', tplId: t.id };
+            render();
+          }},[txt('Obriši')])
+        ]));
+      });
+    }
+    inner.appendChild(el('button',{class:'primary', style:'margin-top:4px', onclick:()=>{
+      wizard = { step:1, name:'', rawText:'', fields:[] }; go({name:'novi'});
+    }},[txt('+ Novi šablon')]));
+
+    if(state.templates.length > 0){
+      inner.appendChild(el('button',{class:'secondary', style:'margin-top:10px', onclick:()=>{
+        const blob = new Blob([JSON.stringify(state.templates, null, 2)], { type:'application/json' });
+        const stamp = new Date().toISOString().slice(0,10);
+        downloadBlob(blob, 'generator-dokumenata-sabloni-'+stamp+'.json');
+      }},[txt('⬇ Izvezi šablone (.json)')]));
+    }
+
+    const importInput = el('input',{type:'file', accept:'.json,application/json', onchange:(e)=>{
+      const f = e.target.files[0];
+      e.target.value = '';
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          const imported = JSON.parse(reader.result);
+          if(!Array.isArray(imported)) throw new Error('Fajl ne sadrži listu šablona.');
+          imported.forEach(t=>{
+            t.id = 'tpl_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+            state.templates.push(t);
+          });
+          saveState();
+          rerender();
+        }catch(err){
+          alert('Uvoz nije uspeo: ' + err.message);
+        }
+      };
+      reader.readAsText(f);
+    }});
+    inner.appendChild(el('button',{class:'secondary', style:'margin-top:10px', onclick:()=>importInput.click()},[txt('⬆ Uvezi šablone (.json)')]));
+    inner.appendChild(importInput);
+    inner.appendChild(el('p',{style:'color:var(--text-dim); font-size:12.5px; margin:8px 0 0; line-height:1.5'},[
+      txt('Uvezeni šabloni se dodaju uz postojeće (ne brišu ništa). Napravi rezervnu kopiju posebno za svaki šablon koji ti je bitan — brisanje "site data" u Chrome-u za ovaj sajt briše sve tvoje sačuvane šablone.')
+    ]));
+
+    body.appendChild(inner);
+    tplGroup.appendChild(body);
+  }
+  main.appendChild(tplGroup);
+
+  wrap.appendChild(main);
+  return wrap;
+}
+
+/* ---------- NOVI ŠABLON — korak 1: naziv ---------- */
+function screenNoviKorak1(){
+  const wrap = el('div',{});
+  wrap.appendChild(topbar('Novi šablon  '+APP_VERSION, ()=>go({name:'home'})));
+  const main = el('main',{});
+  main.appendChild(el('div',{class:'step-dots'},[
+    el('span',{class:'active'}), el('span',{}), el('span',{})
+  ]));
+  main.appendChild(el('div',{},[
+    el('label',{},[txt('Kako se zove ova vrsta dokumenta?')])
+  ]));
+  const input = el('input',{type:'text', placeholder:'npr. Ugovor o zakupu', value:wizard.name});
+  main.appendChild(input);
+  setTimeout(()=>{ input.focus(); }, 0);
+  main.appendChild(el('p',{style:'color:var(--text-dim); font-size:13.5px; line-height:1.5; margin-top:-6px'},[
+    txt('Za svaku vrstu dokumenta (ugovor, zapisnik, depozit...) praviš poseban šablon, jednom.')
+  ]));
+  main.appendChild(el('button',{class:'primary', onclick:()=>{
+    const v = input.value.trim();
+    if(!v) return;
+    wizard.name = v; wizard.step = 2;
+    go({name:'novi'});
+  }},[txt('Dalje')]));
+  wrap.appendChild(main);
+  return wrap;
+}
+
+/* ---------- NOVI ŠABLON — korak 2: upload dokumenta ---------- */
+function screenNoviKorak2(){
+  const wrap = el('div',{});
+  wrap.appendChild(topbar('Novi šablon  '+APP_VERSION, ()=>{ wizard.step=1; go({name:'novi'}); }));
+  const main = el('main',{});
+  main.appendChild(el('div',{class:'step-dots'},[
+    el('span',{}), el('span',{class:'active'}), el('span',{})
+  ]));
+  main.appendChild(el('div',{class:'note'},[
+    txt('Učitaj već popunjen, stvaran primerak dokumenta — sa pravim podacima (npr. potpisan ugovor jednog zakupca). AI će ga pročitati i predložiti koji delovi su specifični za tu osobu.')
+  ]));
+
+  const fileInput = el('input',{type:'file', accept:'.docx,.txt', onchange:async (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    box.classList.add('filled');
+    boxLabel.textContent = f.name;
+    try{
+      const result = await extractTextFromFile(f);
+      wizard.rawText = result.text;
+      wizard.docxArrayBuffer = result.docxArrayBuffer;
+      wizard._fileOk = true;
+    }catch(err){
+      wizard._fileOk = false;
+      errBox.textContent = 'Nisam mogao da pročitam fajl: '+err.message;
+      errBox.style.display = 'block';
+      return;
+    }
+    errBox.style.display = 'none';
+    renderNextBtn();
+  }});
+  const boxLabel = el('span',{},[txt('Tapni da izabereš .docx ili .txt fajl')]);
+  const box = el('div',{class:'upload-box', onclick:()=>fileInput.click()},[
+    el('span',{class:'icon'},[txt('📎')]), boxLabel
+  ]);
+  const errBox = el('div',{class:'err', style:'display:none'},[]);
+
+  main.appendChild(box);
+  main.appendChild(fileInput);
+  main.appendChild(errBox);
+
+  main.appendChild(el('p',{style:'text-align:center; color:var(--text-dim); font-size:13px; margin:6px 0 16px'},[txt('— ili —')]));
+
+  const pasteArea = el('textarea',{placeholder:'Zalepi tekst dokumenta ovde ako nemaš fajl...'});
+  pasteArea.addEventListener('input', ()=>{
+    if(pasteArea.value.trim()){
+      wizard.rawText = pasteArea.value;
+      wizard._fileOk = true;
+      renderNextBtn();
+    }
+  });
+  main.appendChild(pasteArea);
+
+  const nextBtnHolder = el('div',{});
+  main.appendChild(nextBtnHolder);
+  function renderNextBtn(){
+    nextBtnHolder.innerHTML='';
+    nextBtnHolder.appendChild(el('button',{class:'primary', onclick:()=>{
+      wizard.step = 3; wizard._analyzed = false;
+      go({name:'novi'});
+    }},[txt('Analiziraj dokument')]));
+  }
+  if(wizard._fileOk) renderNextBtn();
+
+  wrap.appendChild(main);
+  return wrap;
+}
+
+/* ---------- NOVI ŠABLON — korak 3: AI analiza + potvrda polja ---------- */
+function screenNoviKorak3(){
+  const wrap = el('div',{});
+  wrap.appendChild(topbar('Novi šablon  '+APP_VERSION, ()=>{ wizard.step=2; go({name:'novi'}); }));
+  const main = el('main',{});
+  main.appendChild(el('div',{class:'step-dots'},[
+    el('span',{}), el('span',{}), el('span',{class:'active'})
+  ]));
+
+  if(!wizard._analyzed && !wizard._analyzing){
+    wizard._analyzing = true;
+    analyzeDocument();
+  }
+
+  if(wizard._analyzing){
+    main.appendChild(el('div',{class:'loading-row'},[
+      el('div',{class:'spinner'}), el('span',{},[txt('AI čita dokument i traži promenljiva polja...')])
+    ]));
+    wrap.appendChild(main);
+    return wrap;
+  }
+
+  if(wizard._error){
+    main.appendChild(el('div',{class:'err'},[txt(wizard._error)]));
+    main.appendChild(el('button',{class:'secondary', onclick:()=>{
+      wizard._analyzing=false; wizard._analyzed=false; wizard._error=null; go({name:'novi'});
+    }},[txt('Pokušaj ponovo')]));
+    wrap.appendChild(main);
+    return wrap;
+  }
+
+  main.appendChild(el('p',{style:'color:var(--text-dim); font-size:14px; line-height:1.5'},[
+    txt('AI je pronašao ovo. Potvrdi za svako polje da li je specifično za ovu osobu/transakciju (Da) ili je deo fiksnog teksta koji se ne menja (Ne).')
+  ]));
+
+  (wizard.candidates||[]).forEach((c, idx)=>{
+    const row = el('div',{class:'field-row'},[
+      el('div',{class:'body'},[
+        el('div',{class:'label'},[txt(c.label)]),
+        el('div',{class:'value'},[txt(c.value)]),
+        el('div',{class:'conf'},[txt('pouzdanost: ' + (c.confidence||'—'))])
+      ]),
+      el('div',{class:'toggle'},[
+        el('button',{class:'on-yes'+(c.confirmed? ' active':''), onclick:()=>{ c.confirmed=true; rerender(); }},[txt('Da')]),
+        el('button',{class:'on-no'+(!c.confirmed? ' active':''), onclick:()=>{ c.confirmed=false; rerender(); }},[txt('Ne')])
+      ])
+    ]);
+    main.appendChild(row);
+  });
+
+  if((wizard.candidates||[]).length === 0){
+    main.appendChild(el('div',{class:'note'},[txt('AI nije prepoznao nijedno promenljivo polje u ovom tekstu. Probaj sa drugim primerkom dokumenta.')]));
+    main.appendChild(el('div',{class:'note', style:'margin-top:8px'},[
+      txt('Debug: AI je vratio ' + (wizard._debugParsedCount!=null ? wizard._debugParsedCount : '?') + ' predloga (pre filtriranja).')
+    ]));
+    if(wizard._debugRaw){
+      main.appendChild(el('pre',{class:'doc-preview', style:'font-size:12px; max-height:30vh'},[txt(wizard._debugRaw)]));
+    }
+  }
+
+  if(wizard._saving){
+    main.appendChild(el('div',{class:'loading-row'},[
+      el('div',{class:'spinner'}), el('span',{},[txt('Pravim šablon...')])
+    ]));
+  }else{
+    main.appendChild(el('div',{class:'row', style:'display:flex; gap:10px; margin-top:10px'},[
+      el('button',{class:'secondary', style:'flex:1', onclick:()=>{ wizard=null; go({name:'home'}); }},[txt('Otkaži')]),
+      el('button',{class:'primary', style:'flex:1', onclick:()=>{ wizard._saving = true; rerender(); saveTemplate(); }},[txt('Sačuvaj šablon')])
+    ]));
+  }
+
+  wrap.appendChild(main);
+  return wrap;
+}
+
+/* Deterministička rezerva: mammoth izvlači tabele kao "Naziv polja:\n\nVrednost\n\n"
+   (svaka ćelija u svom redu). Bez obzira šta AI odluči, uvek i sami prepoznamo ovaj
+   obrazac direktno iz teksta — radi na SVAKOM dokumentu koji ima ovakve tabele
+   (naziv-polja : vrednost), ne samo na ovom. Preskačemo redove čija je "vrednost"
+   samo izbor kvadratića (☐), pošto to nije tekst za zamenu nego opcija za biranje. */
+function extractLabelValuePairs(rawText){
+  const re = /([^\n]{2,80}:)\n\n([^\n]{1,200})\n\n/g;
+  const out = [];
+  let m;
+  while((m = re.exec(rawText)) !== null){
+    const label = m[1].replace(/:$/,'').trim();
+    const value = m[2].trim();
+    if(!value) continue;
+    if(value.includes('☐')) continue; // izbor opcije, ne tekst za zamenu
+    if(/^\d+$/.test(value) && value.length<=2) continue; // usamljena cifra (npr. iz čeklista kolone "Kom.")
+    out.push({ label, value, confidence:'high' });
+  }
+  return out;
+}
+
+async function analyzeDocument(){
+  try{
+    const prompt = `Ovo je popunjen primerak dokumenta na srpskom jeziku (ugovor, zapisnik ili slično). Tvoj zadatak: pronađi delove teksta koji su specifični za OVU osobu/transakciju (imena, adrese, brojevi ličnih karata, iznosi, datumi, brojevi telefona, brojevi računa, itd.) — nasuprot fiksnog pravnog teksta koji se ponavlja u svakom takvom dokumentu.
+
+Dokument može sadržati i veliku listu fiksnih stavki (npr. čeklistu, inventar, spisak opreme sa kvadratićima za čekiranje) — to jeste fiksan tekst i njega ne prijavljuješ. ALI to ne znači da ceo dokument treba da tretiraš kao fiksnu formu: bez obzira na to koliko je takva lista velika, ODVOJENO od nje pronađi SVAKI konkretan datum, ime i prezime, adresu, broj telefona/emaila, broj lične karte, ili iznos novca koji se pojavljuje bilo gde u tekstu (najčešće u zaglavlju, pre liste). Ako u tekstu postoji BAREM JEDAN takav konkretan podatak, ne vraćaj praznu listu.
+
+Vrati ISKLJUČIVO JSON niz (bez markdown, bez objašnjenja), gde je svaki element:
+{"label": "kratak opis na srpskom, npr 'Ime zakupca'", "value": "tačan string kako se pojavljuje u dokumentu, karakter po karakter", "confidence": "high" ili "medium" ili "low"}
+
+Pravila:
+- "value" mora biti tačan podniz originalnog teksta (da bi se mogao pronaći i zameniti).
+- Ne uključuj fiksni pravni tekst, nazive članova, opšte formulacije, ili nazive/stavke iz čekliste/inventara.
+- Ne izmišljaj ništa što nije u tekstu.
+- Ako je isti podatak spomenut više puta u istom obliku, navedi ga samo jednom.
+
+Tekst dokumenta:
+"""
+${wizard.rawText}
+"""`;
+    const raw = await callGemini([{ text: prompt }]);
+    const parsed = extractJson(raw);
+    wizard._debugRaw = raw;
+    wizard._debugParsedCount = Array.isArray(parsed) ? parsed.length : -1;
+
+    const aiCandidates = parsed.map(c=>{
+      const rawVal = String(c.value||'').trim();
+      const real = findRealSubstring(wizard.rawText, rawVal);
+      return {
+        label: c.label || 'Polje',
+        value: real || rawVal,
+        confidence: c.confidence || 'medium',
+        _matched: !!real
+      };
+    }).filter(c=>c._matched);
+
+    const regexCandidates = extractLabelValuePairs(wizard.rawText);
+
+    const seen = new Set();
+    wizard.candidates = [];
+    [...aiCandidates, ...regexCandidates].forEach(c=>{
+      if(seen.has(c.value)) return;
+      seen.add(c.value);
+      wizard.candidates.push({ label:c.label, value:c.value, confidence:c.confidence, confirmed:true });
+    });
+
+    wizard._analyzed = true;
+    wizard._analyzing = false;
+  }catch(err){
+    wizard._error = 'Analiza nije uspela: ' + err.message;
+    wizard._analyzing = false;
+  }
+  render();
+}
+
+async function saveTemplate(){
+  const confirmed = (wizard.candidates||[]).filter(c=>c.confirmed);
+  let text = wizard.rawText;
+  const fields = [];
+  const usedKeys = [];
+  confirmed.forEach(c=>{
+    const key = slugify(c.label, usedKeys);
+    usedKeys.push(key);
+    // zameni SVE pojave tačnog stringa placeholder-om (tekstualna verzija — rezerva)
+    text = text.split(c.value).join('{{'+key+'}}');
+    fields.push({ key, label:c.label, exampleValue:c.value });
+  });
+
+  let docxBase64 = null;
+  let docxNotFound = [];
+  if(wizard.docxArrayBuffer){
+    try{
+      const forDocx = fields.map(f=>({ key:f.key, value:f.exampleValue }));
+      const result = await injectPlaceholders(wizard.docxArrayBuffer, forDocx);
+      docxBase64 = result.base64;
+      docxNotFound = result.notFoundKeys;
+    }catch(err){
+      docxBase64 = null;
+      docxNotFound = fields.map(f=>f.key);
+    }
+  }
+
+  const tpl = {
+    id: 'tpl_'+Date.now(),
+    name: wizard.name,
+    templateText: text,
+    fields,
+    docxBase64,      // pravi .docx sa {key} oznakama — null ako nije bilo .docx fajla ili nije uspelo
+    docxNotFound,     // ključevi polja koja NISU pronađena u pravom .docx (ostaju kao fiksan tekst)
+    createdAt: new Date().toISOString()
+  };
+  state.templates.push(tpl);
+  state.currentTemplateId = tpl.id;
+  useSession = null;
+  saveState();
+  wizard = null;
+  go({name:'home'});
+}
+
+/* ---------- DETALJ ŠABLONA + POPUNA ---------- */
+function screenFillContent(tpl){
+  const main = el('main',{});
+
+  if(!useSession || useSession.tplId !== tpl.id){
+    useSession = { tplId: tpl.id, values:{}, missing:[], aiText:'', aiImage:null, aiLoading:false, aiError:null, aiDone:false };
+  }
+
+  /* ---- Šablon koji se skroluje: polja koja treba popuniti ---- */
+  tpl.fields.forEach(f=>{
+    const val = useSession.values[f.key];
+    const missing = useSession.missing.includes(f.key);
+    let valueStyle = '';
+    let valueText = val;
+    if(!val){
+      valueText = '—';
+      valueStyle = missing ? 'color:var(--danger)' : 'color:var(--text-dim)';
+    }
+    main.appendChild(el('div',{class:'field-row'+(missing?' field-row-missing':''), id:'field-'+f.key},[
+      el('div',{class:'body'},[
+        el('div',{class:'label'},[txt(f.label + (missing ? '  —  AI nije pronašao' : ''))]),
+        el('div',{class:'value', style: valueStyle},[txt(valueText)])
+      ])
+    ]));
+  });
+
+  if(tpl.docxNotFound && tpl.docxNotFound.length > 0){
+    const labels = tpl.docxNotFound.map(k=>{
+      const f = tpl.fields.find(f=>f.key===k);
+      return f ? f.label : k;
+    });
+    main.appendChild(el('div',{class:'note', style:'margin-top:14px'},[
+      txt('Napomena: u pravom .docx fajlu, ' + labels.join(', ') + ' nije uspešno pronađeno pri pravljenju šablona, pa će u generisanom dokumentu ostati original vrednost.')
+    ]));
+  }
+
+  if(useSession.genError){
+    main.appendChild(el('div',{class:'err', style:'margin-top:14px'},[txt(useSession.genError)]));
+  }
+
+  main.appendChild(el('button',{class:'primary', style:'margin-top:16px', onclick:()=>{
+    useSession.genError = null;
+    const emptyFields = tpl.fields.filter(f => !(useSession.values[f.key]||'').trim());
+    if(emptyFields.length > 0){
+      modal = { type:'confirmGenerate', tplId: tpl.id, missingLabels: emptyFields.map(f=>f.label) };
+      render();
+      return;
+    }
+    doGenerate(tpl);
+  }},[txt(tpl.docxBase64 ? '📄 Generiši dokument (.docx)' : '📄 Generiši dokument')]));
+
+  return main;
+}
+
+function doGenerate(tpl){
+  useSession.genError = null;
+  const data = {};
+  tpl.fields.forEach(f=>{
+    const raw = (useSession.values[f.key]||'').trim();
+    data[f.key] = raw ? normalizeFieldValue(f, raw) : '';
+  });
+  try{
+    if(tpl.docxBase64){
+      const rawBlob = renderDocx(tpl.docxBase64, data);
+      const blob = new Blob([rawBlob], { type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      downloadBlob(blob, tpl.name.replace(/[^\p{L}\p{N}_-]+/gu,'_')+'.docx');
+    }else{
+      let out = tpl.templateText;
+      tpl.fields.forEach(f=>{
+        out = out.split('{{'+f.key+'}}').join(data[f.key] || '['+f.label+' — NEDOSTAJE]');
+      });
+      const blob = new Blob([out], { type:'text/plain;charset=utf-8' });
+      downloadBlob(blob, tpl.name.replace(/[^\p{L}\p{N}_-]+/gu,'_')+'.txt');
+      useSession.genError = 'Napomena: ovaj šablon nije pravljen od .docx fajla, pa je izlaz običan tekst, ne Word dokument.';
+    }
+  }catch(err){
+    useSession.genError = 'Generisanje nije uspelo: ' + err.message;
+  }
+  rerender();
+}
+
+async function runAiFill(tpl){
+  useSession.aiLoading = true; useSession.aiError = null; rerender();
+  const before = Object.assign({}, useSession.values);
+  try{
+    const fieldsSpec = tpl.fields.map(f=>({ key:f.key, label:f.label, primer:f.exampleValue }));
+    let prompt = `Ovo je šablon dokumenta sa sledećim promenljivim poljima (JSON niz):
+${JSON.stringify(fieldsSpec)}
+
+Iz podataka ispod (slika i/ili tekst) izvuci vrednost za svako polje, po njegovom "key"-u. Tekst je često izdiktiran glasom preko tastature, pa može imati greške automatskog prepoznavanja govora — ispravi ih.
+
+Pravila:
+- Ako ne možeš POUZDANO da odrediš vrednost za neko polje, vrati null za njega. NIKAD ne izmišljaj i ne nagađaj.
+- Ako polje po nazivu očigledno predstavlja broj telefona: vrati SAMO cifre i eventualni vodeći "+" i pozivni broj, bez razmaka, crtica ili drugih razdvajanja (npr. "+38161209242", ne "061 209 242" ni "0 6 1 2 0 9 2 4 2"). Ako je izdiktirano cifru po cifru sa razmacima između njih, spoji ih u jedan neprekidan broj.
+- Ako polje po nazivu očigledno predstavlja email adresu: vrati je bez razmaka, malim slovima (osim ako je korisnik jasno rekao veliko slovo), u standardnom obliku "nešto@domen.com". Ukloni razmake koje je dodalo prepoznavanje govora.
+- Ako polje po nazivu predstavlja datum, vrati ga u obliku dan.mesec.godina (npr. 30.10.2026).
+- Ako polje po nazivu predstavlja novčani iznos, vrati samo broj (bez valute) — valutu će aplikacija sama dodati po šablonu.
+- Vrati ISKLJUČIVO JSON objekat (bez markdown, bez objašnjenja), gde su ključevi isti kao "key" iz liste iznad, a vrednost je string ili null.`;
+    if((useSession.aiText||'').trim()){
+      prompt += `\n\nTekstualni opis koji je korisnik uneo (ukucano ili izdiktirano):\n"""${useSession.aiText.trim()}"""`;
+    }
+    const parts = [{ text: prompt }];
+    if(useSession.aiImage){
+      parts.push({ inlineData: { mimeType: useSession.aiImage.mimeType, data: useSession.aiImage.data } });
+    }
+    const raw = await callGemini(parts);
+    const obj = extractJsonObject(raw);
+    tpl.fields.forEach(f=>{
+      const v = obj[f.key];
+      if(v !== null && v !== undefined && String(v).trim() !== ''){
+        useSession.values[f.key] = normalizeFieldValue(f, String(v).trim());
+      }
+      // ako AI ovog puta nije vratio vrednost, prethodno već upisana vrednost (iz ranijeg AI poziva
+      // ili ručnog unosa) se NE briše — samo se dopunjava ono što je novo prepoznato.
+    });
+    // "nedostaje" se računa nad trenutnim ukupnim stanjem, ne samo nad ovim pojedinačnim pozivom
+    useSession.missing = tpl.fields.filter(f=>!(useSession.values[f.key]||'').trim()).map(f=>f.key);
+    useSession.aiDone = true;
+    useSession.lastFilledKeys = tpl.fields
+      .map(f=>f.key)
+      .filter(k=> useSession.values[k] && useSession.values[k] !== before[k]);
+    // očisti unos za sledeći podatak — korisnik ne treba ručno da briše pre novog diktiranja
+    useSession.aiText = '';
+    useSession.aiImage = null;
+  }catch(err){
+    useSession.aiError = 'Nije uspelo: ' + err.message;
+  }
+  useSession.aiLoading = false;
+  rerender();
+  if(useSession.lastFilledKeys && useSession.lastFilledKeys.length){
+    const target = document.getElementById('field-'+useSession.lastFilledKeys[0]);
+    if(target) target.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
+
+function detectSuffix(example){
+  if(!example) return null;
+  const m = String(example).match(/^\s*[\d.,]+(\s*)([^\d\s].*)$/);
+  if(m) return { spacer: m[1], suffix: m[2].trim() };
+  return null;
+}
+
+function normalizeFieldValue(field, value){
+  const label = field.label.toLowerCase();
+  let v = value.trim();
+  if(label.includes('telefon') || label.includes('phone')){
+    return v.replace(/(?!^\+)[^\d]/g,'');
+  }
+  if(label.includes('mail')){
+    return v.replace(/\s+/g,'').toLowerCase();
+  }
+  // ako je unet samo broj (npr. "500"), a original primer u dokumentu ima jedinicu/valutu
+  // (npr. "400 EUR"), dodaj istu jedinicu — tako i ručni unos i AI unos dobiju isti format.
+  if(/^\d+([.,]\d+)?$/.test(v)){
+    const suf = detectSuffix(field.exampleValue);
+    if(suf && suf.suffix) return v + suf.spacer + suf.suffix;
+  }
+  return v;
+}
+
+/* ======================= UBACIVANJE PLACEHOLDER OZNAKA U PRAVI .DOCX ======================= */
+/* Ovo je osetljiv deo: tekst u document.xml je često podeljen na više <w:t> "run"-ova
+   (zbog formatiranja), pa se traženi string mora locirati preko spojenog teksta i
+   po potrebi razdvojiti/spojiti runove. Ako string ne uspemo pouzdano da nađemo,
+   to polje NE dobija placeholder u pravom .docx-u (ostaje kako je bilo), i to se
+   jasno prijavljuje — ne izmišljamo da je uspelo. */
+
+function xmlDecode(s){
+  return s
+    .replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&quot;/g,'"').replace(/&apos;/g,"'")
+    .replace(/&amp;/g,'&');
+}
+function xmlEncode(s){
+  return s
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function parseRuns(xml){
+  const re = /<w:t([^>]*)>([^<]*)<\/w:t>/g;
+  const runs = [];
+  let m;
+  while((m = re.exec(xml)) !== null){
+    const decoded = xmlDecode(m[2]);
+    runs.push({
+      matchStart: m.index,
+      matchEnd: m.index + m[0].length,
+      attrsStr: m[1] || '',
+      text: decoded,
+      origText: decoded // referenca — ako se .text ne promeni, run se NIKAD ne prepisuje
+    });
+  }
+  return runs;
+}
+
+function buildFlatIndex(runs){
+  let flat = '';
+  const starts = [];
+  runs.forEach(r=>{ starts.push(flat.length); flat += r.text; });
+  return { flat, starts };
+}
+
+/* arrayBuffer originalnog .docx + lista potvrđenih polja [{key, value}] (najduži prvo) →
+   { base64: novi .docx sa {key} oznakama, notFoundKeys: [...] } */
+async function injectPlaceholders(arrayBuffer, confirmedFields){
+  const zip = new PizZip(arrayBuffer);
+  const path = 'word/document.xml';
+  const file = zip.file(path);
+  if(!file) return { base64:null, notFoundKeys: confirmedFields.map(f=>f.key) };
+  let xml = file.asText();
+
+  let runs = parseRuns(xml);
+  const notFound = [];
+
+  // najduže vrednosti prvo, da kraća ne "pojede" deo duže pre nje
+  const sorted = confirmedFields.slice().sort((a,b)=>b.value.length - a.value.length);
+
+  sorted.forEach(f=>{
+    const { flat, starts } = buildFlatIndex(runs);
+    const idx = flat.indexOf(f.value);
+    if(idx < 0){ notFound.push(f.key); return; }
+    const endIdx = idx + f.value.length;
+
+    let r1 = -1, r2 = -1;
+    for(let i=0;i<runs.length;i++){
+      const s = starts[i], e = s + runs[i].text.length;
+      if(r1<0 && idx>=s && idx<e) r1 = i;
+      if(endIdx>s && endIdx<=e) r2 = i;
+      if(r1>=0 && r2>=0) break;
+    }
+    if(r1<0 || r2<0) { notFound.push(f.key); return; }
+
+    const placeholder = '{'+f.key+'}';
+    const offset1 = idx - starts[r1];
+    if(r1 === r2){
+      const offset2 = endIdx - starts[r1];
+      runs[r1].text = runs[r1].text.slice(0, offset1) + placeholder + runs[r1].text.slice(offset2);
+    }else{
+      const offset2 = endIdx - starts[r2];
+      runs[r1].text = runs[r1].text.slice(0, offset1) + placeholder;
+      for(let i=r1+1;i<r2;i++) runs[i].text = '';
+      runs[r2].text = runs[r2].text.slice(offset2);
+    }
+  });
+
+  // ponovo sastavi document.xml koristeći ORIGINALNE granice <w:t> tagova.
+  // KLJUČNA ZAŠTITA: run koji nije izmenjen (r.text === r.origText) kopira se
+  // BAJT-PO-BAJT iz originalnog XML-a, bez ikakvog ponovnog upisivanja —
+  // dodiruju se isključivo tačna mesta potvrđenih polja, ništa drugo.
+  let out = '';
+  let cursor = 0;
+  let touchedCount = 0;
+  runs.forEach(r=>{
+    out += xml.slice(cursor, r.matchStart);
+    if(r.text === r.origText){
+      out += xml.slice(r.matchStart, r.matchEnd); // netaknuto, identično originalu
+    }else{
+      touchedCount++;
+      let attrs = r.attrsStr;
+      if(!/xml:space=/.test(attrs)) attrs += ' xml:space="preserve"';
+      out += '<w:t'+attrs+'>'+xmlEncode(r.text)+'</w:t>';
+    }
+    cursor = r.matchEnd;
+  });
+  out += xml.slice(cursor);
+
+  zip.file(path, out);
+  const base64 = zip.generate({ type:'base64' });
+  return { base64, notFoundKeys: notFound };
+}
+
+/* base64 .docx (sa {key} oznakama) + podaci → Blob konačnog .docx */
+function renderDocx(docxBase64, data){
+  const zip = new PizZip(atob(docxBase64));
+  const doc = new window.docxtemplater(zip, { paragraphLoop:true, linebreaks:true, nullGetter:()=>'' });
+  doc.render(data);
+  return doc.toBlob();
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
+
+function renderModal(){
+  if(modal.type === 'switchTemplate'){
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+      el('div',{class:'modal'},[
+        el('h3',{},[txt('Izaberi šablon')]),
+        ...state.templates.map(t=>{
+          const active = t.id === state.currentTemplateId;
+          return el('button',{class:'secondary', style:'margin-bottom:8px; text-align:left;'+(active?' border-color:var(--amber-lo)':''), onclick:()=>{
+            state.currentTemplateId = t.id; useSession = null; saveState();
+            modal = null;
+            go({name:'home'});
+          }},[txt((active?'● ':'') + t.name)]);
+        })
+      ])
+    ]);
+  }
+  if(modal.type === 'uploadMenu'){
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+      el('div',{class:'modal'},[
+        el('h3',{},[txt('Dodaj dokument')]),
+        el('button',{class:'secondary', style:'margin-bottom:10px', onclick:()=>{ modal=null; render(); globalCameraInput.click(); }},[txt('📷  Slikaj')]),
+        el('button',{class:'secondary', style:'margin-bottom:10px', onclick:()=>{ modal=null; render(); globalGalleryInput.click(); }},[txt('🖼️  Galerija')]),
+        el('button',{class:'secondary', onclick:()=>{ modal=null; render(); globalFilesInput.click(); }},[txt('📁  Fajlovi')])
+      ])
+    ]);
+  }
+  if(modal.type === 'confirmGenerate'){
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+      el('div',{class:'modal'},[
+        el('h3',{},[txt('Neka polja nisu popunjena')]),
+        el('p',{},[txt('Nedostaje: ' + modal.missingLabels.join(', ') + '. Možeš ih ostaviti prazna i generisati dokument ipak, ili se vratiti i popuniti ih.')]),
+        el('div',{class:'row'},[
+          el('button',{class:'secondary', onclick:()=>{ modal=null; render(); }},[txt('Nazad, popuni')]),
+          el('button',{class:'primary', onclick:()=>{
+            const tpl = state.templates.find(t=>t.id===modal.tplId);
+            modal=null;
+            doGenerate(tpl);
+          }},[txt('Generiši ipak')])
+        ])
+      ])
+    ]);
+  }
+  if(modal.type === 'confirmDelete'){
+    return el('div',{class:'modal-backdrop', onclick:(e)=>{ if(e.target.className==='modal-backdrop'){ modal=null; render(); } }},[
+      el('div',{class:'modal'},[
+        el('h3',{},[txt('Obriši šablon?')]),
+        el('p',{},[txt('Ovo se ne može vratiti. Dokumenti koji su već generisani ostaju kako su generisani.')]),
+        el('div',{class:'row'},[
+          el('button',{class:'secondary', onclick:()=>{ modal=null; render(); }},[txt('Otkaži')]),
+          el('button',{class:'primary', style:'background:linear-gradient(135deg,#d97a6d,#a6392c); color:#2a1210', onclick:()=>{
+            state.templates = state.templates.filter(t=>t.id!==modal.tplId);
+            if(state.currentTemplateId === modal.tplId){
+              state.currentTemplateId = state.templates.length ? state.templates[0].id : null;
+            }
+            saveState(); modal=null; useSession=null;
+            go({name:'home'});
+          }},[txt('Obriši')])
+        ])
+      ])
+    ]);
+  }
+  return el('div',{});
+}
+
+/* ---------- ROUTER ---------- */
+function renderScreen(){
+  if(screen.name === 'setup') return screenSetup();
+  if(screen.name === 'home') return screenHome();
+  if(screen.name === 'settings') return screenSettings();
+  if(screen.name === 'novi'){
+    if(wizard.step === 1) return screenNoviKorak1();
+    if(wizard.step === 2) return screenNoviKorak2();
+    if(wizard.step === 3) return screenNoviKorak3();
+  }
+  return screenHome();
+}
+
+render();
+</script>
+</body>
+</html>
