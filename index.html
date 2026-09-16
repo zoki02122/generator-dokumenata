@@ -439,7 +439,7 @@ const APP_VERSION = 'v10';
 function frozenHeader(tpl){
   const wrap = el('div',{class:'frozen-top'});
   wrap.appendChild(el('div',{class:'frozen-row1'},[
-    el('h1',{}, [txt(tpl ? tpl.name : 'Generator dokumenata'), el('span',{style:'font-size:13px; color:var(--text-dim); font-weight:400; margin-left:8px'},[txt(APP_VERSION)])]),
+    el('h1',{}, [txt(tpl ? tpl.name : 'Generator dokumenata')]),
     el('button',{class:'icon-btn', onclick:()=>{ modal = { type:'uploadMenu' }; render(); }},[txt('+')]),
     el('button',{class:'icon-btn', onclick:()=>go({name:'settings'})},[txt('⚙')])
   ]));
@@ -551,7 +551,7 @@ function screenHome(){
 /* ---------- PODEŠAVANJA: API ključ + upravljanje šablonima ---------- */
 function screenSettings(){
   const wrap = el('div',{});
-  wrap.appendChild(topbar('Podešavanja  '+APP_VERSION, ()=>go({name:'home'})));
+  wrap.appendChild(topbar('Podešavanja', ()=>go({name:'home'})));
   const main = el('main',{});
 
   /* ---- Celina: Gemini API ključ ---- */
@@ -657,7 +657,7 @@ function screenSettings(){
 /* ---------- NOVI ŠABLON — korak 1: naziv ---------- */
 function screenNoviKorak1(){
   const wrap = el('div',{});
-  wrap.appendChild(topbar('Novi šablon  '+APP_VERSION, ()=>go({name:'home'})));
+  wrap.appendChild(topbar('Novi šablon', ()=>go({name:'home'})));
   const main = el('main',{});
   main.appendChild(el('div',{class:'step-dots'},[
     el('span',{class:'active'}), el('span',{}), el('span',{})
@@ -684,7 +684,7 @@ function screenNoviKorak1(){
 /* ---------- NOVI ŠABLON — korak 2: upload dokumenta ---------- */
 function screenNoviKorak2(){
   const wrap = el('div',{});
-  wrap.appendChild(topbar('Novi šablon  '+APP_VERSION, ()=>{ wizard.step=1; go({name:'novi'}); }));
+  wrap.appendChild(topbar('Novi šablon', ()=>{ wizard.step=1; go({name:'novi'}); }));
   const main = el('main',{});
   main.appendChild(el('div',{class:'step-dots'},[
     el('span',{}), el('span',{class:'active'}), el('span',{})
@@ -752,7 +752,7 @@ function screenNoviKorak2(){
 /* ---------- NOVI ŠABLON — korak 3: AI analiza + potvrda polja ---------- */
 function screenNoviKorak3(){
   const wrap = el('div',{});
-  wrap.appendChild(topbar('Novi šablon  '+APP_VERSION, ()=>{ wizard.step=2; go({name:'novi'}); }));
+  wrap.appendChild(topbar('Novi šablon', ()=>{ wizard.step=2; go({name:'novi'}); }));
   const main = el('main',{});
   main.appendChild(el('div',{class:'step-dots'},[
     el('span',{}), el('span',{}), el('span',{class:'active'})
