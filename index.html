@@ -809,6 +809,29 @@ function screenNoviKorak3(){
     }
   }
 
+  if(wizard._addingField){
+    const labelInput = el('input',{type:'text', placeholder:'Naziv polja, npr. Ime deteta'});
+    const valueInput = el('input',{type:'text', placeholder:'Vrednost TAČNO kako stoji u dokumentu'});
+    main.appendChild(el('div',{class:'card'},[
+      el('label',{},[txt('Naziv polja')]), labelInput,
+      el('label',{},[txt('Vrednost (mora se poklapati tačno sa tekstom dokumenta)')]), valueInput,
+      wizard._addFieldError ? el('div',{class:'err'},[txt(wizard._addFieldError)]) : null,
+      el('div',{style:'display:flex; gap:10px; margin-top:6px'},[
+        el('button',{class:'secondary', style:'flex:1', onclick:()=>{ wizard._addingField=false; wizard._addFieldError=null; rerender(); }},[txt('Otkaži')]),
+        el('button',{class:'primary', style:'flex:1', onclick:()=>{
+          const lbl = labelInput.value.trim();
+          const val = valueInput.value.trim();
+          if(!lbl || !val){ wizard._addFieldError='Popuni oba polja.'; rerender(); return; }
+          if(!wizard.rawText.includes(val)){ wizard._addFieldError='Ova vrednost se ne pojavljuje tačno u dokumentu (provери razmake/slova).'; rerender(); return; }
+          wizard.candidates.push({ label: lbl, value: val, confidence:'ručno dodato', confirmed:true });
+          wizard._addingField=false; wizard._addFieldError=null; rerender();
+        }},[txt('Dodaj')])
+      ])
+    ].filter(Boolean)));
+  }else{
+    main.appendChild(el('button',{class:'link', onclick:()=>{ wizard._addingField=true; rerender(); }},[txt('+ Dodaj polje koje AI nije prepoznao')]));
+  }
+
   if(wizard._saving){
     main.appendChild(el('div',{class:'loading-row'},[
       el('div',{class:'spinner'}), el('span',{},[txt('Pravim šablon...')])
@@ -857,6 +880,7 @@ Pravila:
 - "value" mora biti tačan podniz originalnog teksta (da bi se mogao pronaći i zameniti).
 - Ne uključuj fiksni pravni tekst, nazive članova, opšte formulacije, ili nazive/stavke iz čekliste/inventara.
 - Ne izmišljaj ništa što nije u tekstu.
+- Ako dokument nabraja VIŠE OSOBA (npr. suvlasnici, članovi porodice, lica koja koriste stan), obradi SVAKU osobu posebno i SVAKI njen podatak (ime, broj dokumenta, adresa, državljanstvo...) kao SVOJE ODVOJENO polje — nikad ne spajaj podatke više osoba u jedno polje, i ne izostavi nijednu osobu iz nabrajanja, čak i ako ih je mnogo.
 - Ako je isti podatak spomenut više puta u istom obliku, navedi ga samo jednom.
 
 Tekst dokumenta:
